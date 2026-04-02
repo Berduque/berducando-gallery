@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Berducando | The Nocturnal Editorial</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Manrope:wght@200..800&family=Inter:wght@100..900&family=Alegreya+Sans+SC:wght@100..900&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "primary": "#FF5733",
+          "primary-container": "#ff5733",
+          "on-primary-container": "#580c00",
+          "background-light": "#f5f3f1",
+          "background-dark": "#0e0e0e",
+          "accent-shadow": "#4A1C17",
+          "surface-container-lowest": "#0e0e0e",
+          "on-surface": "#131313",
+          "on-surface-variant": "#5b403a"
+        },
+        fontFamily: {
+          "display": ["Newsreader"],
+          "headline": ["Newsreader", "serif"],
+          "body": ["Manrope", "sans-serif"],
+          "label": ["Inter", "sans-serif"],
+          "signature": ["Alegreya Sans SC", "sans-serif"]
+        },
+        borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+      },
+    },
+  }</script>
+<style>
+    /* ── Grid Canvas ── */
+    #grid-canvas {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+    }
+    * { box-sizing: border-box; }
+
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        transition: background-color 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                    color 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* ── Glass Nav ── */
+    .glass-nav {
+        background: rgba(245, 243, 241, 0.72);
+        backdrop-filter: blur(24px) saturate(180%);
+        -webkit-backdrop-filter: blur(24px) saturate(180%);
+        border-bottom: 1px solid rgba(0,0,0,0.06);
+        transition: background 0.6s cubic-bezier(0.16,1,0.3,1),
+                    border-color 0.6s cubic-bezier(0.16,1,0.3,1);
+    }
+    .dark .glass-nav {
+        background: rgba(14, 14, 14, 0.72);
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    /* ── Theme Toggle ── */
+    .theme-toggle {
+        position: relative;
+        width: 52px;
+        height: 28px;
+        border-radius: 14px;
+        cursor: pointer;
+        border: none;
+        outline: none;
+        overflow: hidden;
+        transition: background 0.5s cubic-bezier(0.16,1,0.3,1);
+        background: #e2ddd9;
+        flex-shrink: 0;
+    }
+    .dark .theme-toggle {
+        background: #2a2520;
+    }
+    .theme-toggle-thumb {
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #6b5c55;
+        transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+                    background 0.5s cubic-bezier(0.16,1,0.3,1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        will-change: transform;
+    }
+    .dark .theme-toggle-thumb {
+        transform: translateX(24px);
+        background: #c8a882;
+    }
+    .theme-toggle-thumb .material-symbols-outlined {
+        font-size: 12px;
+        color: #f5f3f1;
+        transition: opacity 0.3s ease;
+        line-height: 1;
+    }
+    .thumb-moon { opacity: 1; }
+    .thumb-sun  { opacity: 0; position: absolute; }
+    .dark .thumb-moon { opacity: 0; }
+    .dark .thumb-sun  { opacity: 1; }
+
+    /* ── Reveal on scroll ── */
+    .reveal {
+        opacity: 0;
+        transform: translateY(36px);
+        transition: opacity 1.4s cubic-bezier(0.16, 1, 0.3, 1),
+                    transform 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+        will-change: opacity, transform;
+    }
+    .reveal.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    /* ── Parallax container ── */
+    .parallax-wrap {
+        overflow: hidden;
+        border-radius: 0.5rem;
+    }
+    .parallax-img {
+        width: 100%;
+        height: auto;
+        display: block;
+        will-change: transform;
+        transition: transform 0.08s linear;
+        transform-origin: center center;
+    }
+
+    /* ── Gallery image hover ── */
+    .art-card {
+        position: relative;
+        overflow: hidden;
+        border-radius: 0.5rem;
+        cursor: pointer;
+    }
+    .art-card img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1),
+                    filter 0.8s ease;
+        will-change: transform;
+    }
+    .art-card:hover img {
+        transform: scale(1.04);
+        filter: brightness(1.05);
+    }
+    .art-card-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 50%);
+        opacity: 0;
+        transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        border-radius: 0.5rem;
+    }
+    .art-card:hover .art-card-overlay {
+        opacity: 1;
+    }
+    .art-card-label {
+        position: absolute;
+        bottom: 1.2rem;
+        left: 1.2rem;
+        color: #f5f3f1;
+        font-family: 'Alegreya Sans SC', sans-serif;
+        font-size: 0.7rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        opacity: 0;
+        transform: translateY(8px);
+        transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .art-card:hover .art-card-label {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    /* ── Hero gradient ── */
+    .hero-gradient {
+        background: linear-gradient(135deg,
+            rgba(255,87,51,0.06) 0%,
+            transparent 50%,
+            rgba(74,28,23,0.12) 100%);
+    }
+    .dark .hero-gradient {
+        background: linear-gradient(135deg,
+            rgba(255,87,51,0.08) 0%,
+            transparent 50%,
+            rgba(74,28,23,0.2) 100%);
+    }
+
+    /* ── Cursor follower ── */
+    #cursor-glow {
+        position: fixed;
+        width: 240px;
+        height: 240px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255,87,51,0.06) 0%, transparent 70%);
+        pointer-events: none;
+        z-index: 0;
+        transform: translate(-50%, -50%);
+        transition: opacity 0.4s ease;
+        will-change: left, top;
+    }
+
+    /* ── Footer inputs ── */
+    input:focus { outline: none; box-shadow: none; }
+</style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-stone-900 dark:text-stone-100 font-body">
+
+<!-- Grid canvas -->
+<canvas id="grid-canvas"></canvas>
+
+<!-- Cursor glow -->
+<div id="cursor-glow"></div>
+
+<!-- ── Navigation ── -->
+<nav class="glass-nav fixed top-0 w-full z-50">
+    <div class="flex justify-between items-center px-8 md:px-12 py-5 w-full max-w-screen-2xl mx-auto">
+        <a class="font-headline italic text-2xl text-stone-900 dark:text-stone-100 tracking-tight select-none" href="#">Berducando</a>
+
+        <div class="hidden md:flex items-center space-x-10">
+            <a class="text-primary font-semibold border-b border-primary/30 pb-0.5 font-headline text-base tracking-tight" href="#">Gallery</a>
+            <a class="text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors duration-300 font-headline text-base tracking-tight" href="#">Curations</a>
+            <a class="text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors duration-300 font-headline text-base tracking-tight" href="#">Archives</a>
+            <a class="text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors duration-300 font-headline text-base tracking-tight" href="#">About</a>
+        </div>
+
+        <div class="flex items-center gap-5">
+            <!-- Theme Toggle -->
+            <button
+                id="theme-btn"
+                class="theme-toggle"
+                aria-label="Toggle light/dark mode"
+                onclick="toggleTheme()"
+            >
+                <span class="theme-toggle-thumb">
+                    <span class="material-symbols-outlined thumb-moon">dark_mode</span>
+                    <span class="material-symbols-outlined thumb-sun">light_mode</span>
+                </span>
+            </button>
+
+            <button class="px-5 py-2 bg-stone-900 dark:bg-stone-800/50 text-stone-100 font-signature tracking-widest text-xs border border-transparent dark:border-stone-700/20 hover:bg-stone-800 dark:hover:bg-stone-700/60 transition-all duration-300 rounded-sm">
+                Connect
+            </button>
+        </div>
+    </div>
+</nav>
+
+<main class="pt-24">
+
+    <!-- ── Hero Section ── -->
+    <section class="relative px-8 md:px-12 mb-28 h-[580px] flex items-center overflow-hidden hero-gradient">
+        <div class="relative z-10 w-full max-w-screen-2xl mx-auto">
+            <div class="max-w-2xl">
+                <p class="font-label text-[10px] uppercase tracking-[0.3em] text-primary/70 mb-5 reveal">— The Curated Shadow</p>
+                <h1 class="font-headline italic text-6xl md:text-8xl text-stone-900 dark:text-stone-100 leading-[0.9] mb-7 reveal" style="transition-delay:0.08s">
+                    The&nbsp;<span class="text-primary">Nocturnal</span><br>Editorial
+                </h1>
+                <p class="font-body text-base text-stone-500 dark:text-stone-400 max-w-md leading-relaxed mb-9 reveal" style="transition-delay:0.16s">
+                    An immersive digital archive where darkness breathes life into texture. Exploring the visceral intersection of light, shadow, and silent storytelling.
+                </p>
+                <div class="flex gap-4 reveal" style="transition-delay:0.22s">
+                    <button class="px-8 py-3.5 bg-primary text-white font-label uppercase tracking-widest text-[10px] font-semibold hover:brightness-110 transition-all duration-300 rounded-sm">
+                        Enter Gallery
+                    </button>
+                    <button class="px-8 py-3.5 border border-stone-300 dark:border-stone-700 text-stone-600 dark:text-stone-400 font-label uppercase tracking-widest text-[10px] hover:border-stone-500 dark:hover:border-stone-500 transition-all duration-300 rounded-sm">
+                        Learn More
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Asymmetric Gallery Grid ── -->
+    <section class="w-full px-6 md:px-16 mb-40">
+        <div class="grid grid-cols-12 gap-x-6 items-start" style="row-gap: 6rem;">
+
+            <!-- Row 1: large left + small right -->
+            <div class="col-span-12 md:col-span-7 reveal parallax-wrap" data-delay="0">
+                <div class="art-card" style="height:520px;">
+                    <img class="parallax-img" data-speed="0.025" src="../Artworks/png/luiza/LUIZA.png" alt="Luiza">
+                    <div class="art-card-overlay"></div>
+                    <span class="art-card-label">Luiza · 2024</span>
+                </div>
+            </div>
+            <div class="col-span-12 md:col-span-4 md:col-start-9 md:mt-36 reveal parallax-wrap" data-delay="80">
+                <div class="art-card" style="height:360px;">
+                    <img class="parallax-img" data-speed="0.03" src="../Artworks/png/cooldude/cool-dude.png" alt="Cool Dude">
+                    <div class="art-card-overlay"></div>
+                    <span class="art-card-label">Cool Dude</span>
+                </div>
+            </div>
+
+            <!-- Row 2: centered large -->
+            <div class="col-span-12 md:col-span-5 md:col-start-2 reveal parallax-wrap" data-delay="0">
+                <div class="art-card" style="height:440px;">
+                    <img class="parallax-img" data-speed="0.028" src="../Artworks/png/luaecigarro/cigarret-lady.png" alt="Cigaret Lady">
+                    <div class="art-card-overlay"></div>
+                    <span class="art-card-label">Lua & Cigarro</span>
+                </div>
+            </div>
+            <div class="col-span-12 md:col-span-6 md:col-start-7 md:-mt-20 reveal parallax-wrap" data-delay="80">
+                <div class="art-card" style="height:500px;">
+                    <img class="parallax-img" data-speed="0.02" src="../Artworks/png/otherworks/oceano-final-nal-nal.png" alt="Oceano">
+                    <div class="art-card-overlay"></div>
+                    <span class="art-card-label">Oceano</span>
+                </div>
+            </div>
+
+            <!-- Quote interlude -->
+            <div class="col-span-12 py-20 flex flex-col items-center reveal" data-delay="0">
+                <h2 class="font-headline italic text-4xl md:text-6xl text-stone-300 dark:text-stone-700 text-center leading-tight max-w-4xl">
+                    "Art is not what you see, but what you make <span class="text-stone-700 dark:text-stone-200">others see</span> through the absence of light."
+                </h2>
+            </div>
+
+            <!-- Row 3 -->
+            <div class="col-span-12 md:col-span-4 reveal parallax-wrap" data-delay="0">
+                <div class="art-card" style="height:420px;">
+                    <img class="parallax-img" data-speed="0.022" src="../Artworks/png/falling/1.png" alt="Falling 1">
+                    <div class="art-card-overlay"></div>
+                    <span class="art-card-label">Falling · I</span>
+                </div>
+            </div>
+            <div class="col-span-12 md:col-span-7 md:col-start-6 md:mt-28 reveal parallax-wrap" data-delay="80">
+                <div class="art-card" style="height:460px;">
+                    <img class="parallax-img" data-speed="0.018" src="../Artworks/png/otherworks/demon.png" alt="Demon">
+                    <div class="art-card-overlay"></div>
+                    <span class="art-card-label">Demon</span>
+                </div>
+            </div>
+
+            <!-- Row 4 -->
+            <div class="col-span-12 md:col-span-3 reveal parallax-wrap" data-delay="0">
+                <div class="art-card" style="height:380px;">
+                    <img class="parallax-img" data-speed="0.03" src="../Artworks/png/cooldude/1.png" alt="Study I">
+                    <div class="art-card-overlay"></div>
+                    <span class="art-card-label">Study · I</span>
+                </div>
+            </div>
+            <div class="col-span-12 md:col-span-8 md:col-start-5 md:-mt-10 reveal parallax-wrap" data-delay="80">
+                <div class="art-card" style="height:500px;">
+                    <img class="parallax-img" data-speed="0.015" src="../Artworks/png/otherworks/pela_chuva.png" alt="Pela Chuva">
+                    <div class="art-card-overlay"></div>
+                    <span class="art-card-label">Pela Chuva</span>
+                </div>
+            </div>
+
+            <!-- Row 5 -->
+            <div class="col-span-12 md:col-span-5 md:col-start-4 reveal parallax-wrap" data-delay="0">
+                <div class="art-card border-l-4 border-primary/40" style="height:440px;">
+                    <img class="parallax-img" data-speed="0.025" src="../Artworks/png/otherworks/spaceman2.png" alt="Spaceman">
+                    <div class="art-card-overlay"></div>
+                    <span class="art-card-label">Spaceman</span>
+                </div>
+            </div>
+            <div class="col-span-12 md:col-span-4 md:col-start-9 md:mt-24 reveal parallax-wrap" data-delay="80">
+                <div class="art-card" style="height:380px;">
+                    <img class="parallax-img" data-speed="0.02" src="../Artworks/png/otherworks/heartbearer.png" alt="Heartbearer">
+                    <div class="art-card-overlay"></div>
+                    <span class="art-card-label">Heartbearer</span>
+                </div>
+            </div>
+
+            <!-- Row 6: full wide -->
+            <div class="col-span-12 md:col-span-10 md:col-start-2 reveal parallax-wrap" data-delay="0">
+                <div class="art-card" style="height:560px;">
+                    <img class="parallax-img" data-speed="0.012" src="../Artworks/png/otherworks/behold2.png" alt="Behold">
+                    <div class="art-card-overlay"></div>
+                    <span class="art-card-label">Behold · 2024</span>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ── Newsletter CTA ── -->
+    <section class="w-full py-36 px-8 md:px-12 border-t border-stone-200 dark:border-stone-800/40 bg-stone-100/60 dark:bg-stone-950/60 transition-colors duration-500">
+        <div class="max-w-screen-xl mx-auto flex flex-col md:flex-row justify-between items-end gap-12">
+            <div class="max-w-2xl">
+                <h3 class="font-headline italic text-5xl md:text-6xl text-stone-900 dark:text-stone-100 mb-6 leading-tight reveal">
+                    Join the Inner <span class="text-primary/70">Sanctum</span>
+                </h3>
+                <p class="font-body text-base text-stone-500 dark:text-stone-400 leading-relaxed mb-10 reveal" style="transition-delay:0.1s">
+                    Receive weekly curations of the world's most evocative nocturnal art and exclusive access to the Berducando archives.
+                </p>
+                <form class="flex w-full max-w-md border-b border-stone-300 dark:border-stone-700 pb-2 reveal" style="transition-delay:0.18s" onsubmit="return false;">
+                    <input
+                        class="bg-transparent border-none focus:ring-0 w-full font-label text-xs uppercase tracking-widest text-stone-700 dark:text-stone-300 placeholder:text-stone-400 dark:placeholder:text-stone-600"
+                        placeholder="YOUR EMAIL ADDRESS"
+                        type="email"
+                    />
+                    <button class="material-symbols-outlined text-primary hover:text-primary/70 transition-colors" type="submit">arrow_forward</button>
+                </form>
+            </div>
+            <div class="hidden md:block pb-2 select-none">
+                <p class="font-signature text-8xl text-stone-200 dark:text-stone-800">NOCTURNE</p>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<!-- ── Footer ── -->
+<footer class="w-full py-16 px-8 md:px-12 border-t border-stone-200 dark:border-stone-800 bg-stone-100 dark:bg-neutral-950 transition-colors duration-500">
+    <div class="flex flex-col md:flex-row justify-between items-center gap-8 w-full">
+        <div class="font-headline italic text-xl text-stone-900 dark:text-stone-200">Berducando</div>
+        <div class="flex gap-10">
+            <a class="font-label text-[10px] uppercase tracking-[0.2em] text-stone-500 hover:text-primary transition-all duration-300" href="#">Privacy</a>
+            <a class="font-label text-[10px] uppercase tracking-[0.2em] text-stone-500 hover:text-primary transition-all duration-300" href="#">Terms</a>
+            <a class="font-label text-[10px] uppercase tracking-[0.2em] text-stone-500 hover:text-primary transition-all duration-300" href="#">Studio</a>
+        </div>
+        <div class="font-label text-[10px] uppercase tracking-[0.2em] text-stone-400">
+            © 2024 Berducando. All Rights Reserved.
+        </div>
+    </div>
+</footer>
+
+<script>
+    // ── Theme ──────────────────────────────────────────────────────────────
+    const html = document.documentElement;
+
+    // Load saved preference (default: dark)
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+        html.classList.remove('dark');
+    } else {
+        html.classList.add('dark');
+    }
+
+    function toggleTheme() {
+        const isDark = html.classList.toggle('dark');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    }
+
+    // ── Shared mouse tracking ──────────────────────────────────────────────
+    let mouseX = 0, mouseY = 0;
+    let glowX  = 0, glowY  = 0;
+
+    document.addEventListener('mousemove', e => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+    });
+
+    // ── Cursor glow ────────────────────────────────────────────────────────
+    const glow = document.getElementById('cursor-glow');
+
+    // ── Interactive dashed-grid canvas ─────────────────────────────────────
+    const canvas  = document.getElementById('grid-canvas');
+    const ctx     = canvas.getContext('2d');
+    const CELL    = 64;          // px between grid lines
+    const DASH    = [4, 8];      // dash pattern [on, off]
+    const RADIUS  = 200;         // Mouse influence radius in px
+
+    // Each intersection keeps an animated "energy" value (0–1)
+    // Lines are drawn between intersections; proximity raises energy
+    let cols = 0, rows = 0;
+    let energy = [];   // 2-D array [row][col]
+
+    function resizeCanvas() {
+        canvas.width  = window.innerWidth;
+        canvas.height = window.innerHeight;
+        cols = Math.ceil(canvas.width  / CELL) + 2;
+        rows = Math.ceil(canvas.height / CELL) + 2;
+        // Re-init energy grid
+        energy = Array.from({ length: rows + 1 }, () =>
+            new Float32Array(cols + 1).fill(0)
+        );
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas, { passive: true });
+
+    function isDark() {
+        return document.documentElement.classList.contains('dark');
+    }
+
+    function drawGrid() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const dark  = isDark();
+        // Base colours for idle lines
+        const baseR = dark ? 255 : 0;
+        const baseG = dark ? 255 : 0;
+        const baseB = dark ? 255 : 0;
+        const baseAlpha = dark ? 0.04 : 0.06;   // very subtle
+        // Highlight colour (primary orange)
+        const hiR = 255, hiG = 87, hiB = 51;
+
+        const scrollTop = window.scrollY;
+
+        ctx.save();
+        ctx.setLineDash(DASH);
+        ctx.lineWidth = 1;
+
+        // ── Vertical lines ─────────────────────────────────────────────────
+        for (let c = 0; c <= cols; c++) {
+            const x = c * CELL;
+
+            // Energy for this line = max energy of the two col nodes at mouse row
+            // Simplified: just distance from x to mouseX
+            const dx    = x - mouseX;
+            const dist  = Math.abs(dx);
+            const prox  = Math.max(0, 1 - dist / RADIUS);
+            const eVal  = prox * prox;  // smooth falloff
+
+            const alpha = baseAlpha + eVal * 0.55;
+            const r     = Math.round(baseR + (hiR - baseR) * eVal);
+            const g     = Math.round(baseG + (hiG - baseG) * eVal);
+            const b     = Math.round(baseB + (hiB - baseB) * eVal);
+
+            // Gradient along the line — fade toward mouse Y for elegance
+            const grad = ctx.createLinearGradient(x, 0, x, canvas.height);
+            const cy   = mouseY;  // mouse in viewport
+            const top  = Math.max(0,              cy - RADIUS * 1.5);
+            const bot  = Math.min(canvas.height,  cy + RADIUS * 1.5);
+
+            grad.addColorStop(0,           `rgba(${r},${g},${b},0)`);
+            grad.addColorStop(
+                Math.max(0, top / canvas.height),
+                `rgba(${r},${g},${b},${(baseAlpha).toFixed(3)})`
+            );
+            grad.addColorStop(
+                Math.min(1, cy / canvas.height),
+                `rgba(${r},${g},${b},${alpha.toFixed(3)})`
+            );
+            grad.addColorStop(
+                Math.min(1, bot / canvas.height),
+                `rgba(${r},${g},${b},${(baseAlpha).toFixed(3)})`
+            );
+            grad.addColorStop(1,           `rgba(${r},${g},${b},0)`);
+
+            ctx.strokeStyle = grad;
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+            ctx.stroke();
+        }
+
+        // ── Horizontal lines ───────────────────────────────────────────────
+        for (let r = 0; r <= rows; r++) {
+            const y = r * CELL;
+
+            const dy   = y - mouseY;
+            const dist = Math.abs(dy);
+            const prox = Math.max(0, 1 - dist / RADIUS);
+            const eVal = prox * prox;
+
+            const alpha = baseAlpha + eVal * 0.55;
+            const rv    = Math.round(baseR + (hiR - baseR) * eVal);
+            const gv    = Math.round(baseG + (hiG - baseG) * eVal);
+            const bv    = Math.round(baseB + (hiB - baseB) * eVal);
+
+            const grad = ctx.createLinearGradient(0, y, canvas.width, y);
+            const cx   = mouseX;
+            const left = Math.max(0,             cx - RADIUS * 1.5);
+            const rigt = Math.min(canvas.width,  cx + RADIUS * 1.5);
+
+            grad.addColorStop(0,           `rgba(${rv},${gv},${bv},0)`);
+            grad.addColorStop(
+                Math.max(0, left / canvas.width),
+                `rgba(${rv},${gv},${bv},${(baseAlpha).toFixed(3)})`
+            );
+            grad.addColorStop(
+                Math.min(1, cx / canvas.width),
+                `rgba(${rv},${gv},${bv},${alpha.toFixed(3)})`
+            );
+            grad.addColorStop(
+                Math.min(1, rigt / canvas.width),
+                `rgba(${rv},${gv},${bv},${(baseAlpha).toFixed(3)})`
+            );
+            grad.addColorStop(1,           `rgba(${rv},${gv},${bv},0)`);
+
+            ctx.strokeStyle = grad;
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvas.width, y);
+            ctx.stroke();
+        }
+
+        // ── Intersection dots near mouse ────────────────────────────────────
+        // Small glowing dots appear at grid intersections close to cursor
+        ctx.setLineDash([]);
+        const nearCols = Math.ceil(RADIUS / CELL) + 1;
+        const nearRows = Math.ceil(RADIUS / CELL) + 1;
+        const startC   = Math.max(0, Math.floor(mouseX / CELL) - nearCols);
+        const endC     = Math.min(cols, Math.ceil(mouseX  / CELL) + nearCols);
+        const startR   = Math.max(0, Math.floor(mouseY / CELL) - nearRows);
+        const endR     = Math.min(rows, Math.ceil(mouseY  / CELL) + nearRows);
+
+        for (let c = startC; c <= endC; c++) {
+            for (let r = startR; r <= endR; r++) {
+                const ix   = c * CELL;
+                const iy   = r * CELL;
+                const dist = Math.hypot(ix - mouseX, iy - mouseY);
+                const prox = Math.max(0, 1 - dist / (RADIUS * 0.7));
+                if (prox <= 0) continue;
+                const eVal = prox * prox;
+                const dotAlpha = eVal * 0.7;
+                const dotR = 1.5 + eVal * 2;
+
+                ctx.beginPath();
+                ctx.arc(ix, iy, dotR, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255,87,51,${dotAlpha.toFixed(3)})`;
+                ctx.fill();
+            }
+        }
+
+        ctx.restore();
+    }
+
+    // ── Unified RAF loop ────────────────────────────────────────────────────
+    function mainLoop() {
+        // Smooth cursor glow
+        glowX += (mouseX - glowX) * 0.06;
+        glowY += (mouseY - glowY) * 0.06;
+        glow.style.left = glowX + 'px';
+        glow.style.top  = glowY + 'px';
+
+        // Draw interactive grid
+        drawGrid();
+
+        requestAnimationFrame(mainLoop);
+    }
+    mainLoop();
+
+    // ── Reveal on scroll ───────────────────────────────────────────────────
+    const revealEls = document.querySelectorAll('.reveal');
+
+    const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const delay = entry.target.dataset.delay || 0;
+                setTimeout(() => {
+                    entry.target.classList.add('visible');
+                }, parseInt(delay));
+                revealObserver.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.08, rootMargin: '0px 0px -80px 0px' });
+
+    revealEls.forEach(el => revealObserver.observe(el));
+
+    // ── Subtle Parallax ────────────────────────────────────────────────────
+    // Uses requestAnimationFrame for smooth, butter-like motion.
+    // Speed values are kept very small (0.012–0.03) for subtlety.
+    const parallaxImgs = document.querySelectorAll('.parallax-img');
+
+    let scrollY = window.pageYOffset;
+    let ticking = false;
+
+    function updateParallax() {
+        scrollY = window.pageYOffset;
+        const vh = window.innerHeight;
+
+        parallaxImgs.forEach(img => {
+            const wrap = img.closest('.parallax-wrap');
+            if (!wrap) return;
+
+            const rect = wrap.getBoundingClientRect();
+
+            // Only process visible elements
+            if (rect.bottom < 0 || rect.top > vh) return;
+
+            const speed  = parseFloat(img.dataset.speed) || 0.02;
+            const center = rect.top + rect.height / 2 - vh / 2;
+            const yShift = center * speed;
+
+            // Scale slightly so edges never show when image shifts
+            img.style.transform = `translateY(${yShift.toFixed(2)}px) scale(1.08)`;
+        });
+
+        ticking = false;
+    }
+
+    window.addEventListener('scroll', () => {
+        if (!ticking) {
+            requestAnimationFrame(updateParallax);
+            ticking = true;
+        }
+    }, { passive: true });
+
+    // Trigger once on load
+    updateParallax();
+</script>
+</body>
+</html>
